@@ -1,0 +1,232 @@
+/* frontend/src/styles/Equipos.css */
+
+/* --- Importación de Fuente (Opcional) --- */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap");
+
+/* --- Variables de Color (Las mismas de Profile) --- */
+:root {
+  --profile-bg: #121212;
+  --profile-card-bg: rgba(26, 26, 29, 0.75);
+  --profile-border: rgba(255, 255, 255, 0.1);
+  --profile-text: #e0e0e0;
+  --profile-text-secondary: #aaaaaa;
+  --profile-text-highlight: #ffffff;
+  --profile-glow-primary: #8a2be2;
+  --profile-glow-secondary: #00bcd4;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-danger: #dc3545;
+}
+
+/* --- Contenedor Principal --- */
+.equipos-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 2rem;
+  font-family: "Poppins", -apple-system, sans-serif;
+  background-color: var(--profile-bg);
+  min-height: 100vh;
+  color: var(--profile-text);
+  animation: fadeIn 0.8s ease-out; /* (Animación definida en Profile.css) */
+}
+
+.equipos-container h1,
+.equipos-container h2 {
+  font-weight: 700;
+  color: var(--profile-text-highlight);
+  text-align: center;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+}
+
+.equipos-container h1 {
+  font-size: 2.8rem;
+}
+.equipos-container h2 {
+  font-size: 2.2rem;
+  width: 100%;
+  border-bottom: 1px solid var(--profile-border);
+  padding-bottom: 1rem;
+}
+
+/* --- Formulario de Creación (Para Event Manager) --- */
+.create-team-form {
+  background-color: var(--profile-card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--profile-border);
+  padding: 2rem;
+  margin-bottom: 3rem;
+  width: 100%;
+  max-width: 650px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  animation: fadeIn 1s ease-out 0.2s;
+  animation-fill-mode: backwards;
+}
+
+.create-team-form h3 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--profile-text-highlight);
+  border-bottom: 1px solid var(--profile-border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.create-team-input {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--profile-border);
+  border-radius: 10px;
+  color: var(--profile-text);
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box; /* Importante */
+}
+
+.create-team-input:focus {
+  outline: none;
+  border-color: var(--profile-glow-primary);
+  box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);
+}
+
+.create-team-button {
+  background: linear-gradient(90deg, var(--profile-glow-primary), var(--profile-glow-secondary));
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+}
+
+.create-team-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(138, 43, 226, 0.6);
+}
+
+/* --- Grid de Equipos --- */
+.equipos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.team-card {
+  background-color: var(--profile-card-bg);
+  border: 1px solid var(--profile-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.2);
+}
+
+.team-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--profile-glow-secondary);
+}
+
+.team-card h3 {
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: var(--profile-glow-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.team-card-manager {
+  font-size: 0.9rem;
+  color: var(--profile-text-secondary);
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.team-card-manager strong {
+  color: var(--profile-text);
+}
+
+.team-members {
+  margin-bottom: 1.5rem;
+  flex-grow: 1; /* Empuja los botones hacia abajo */
+}
+
+.team-members h4 {
+  font-size: 1.1rem;
+  color: var(--profile-text-highlight);
+  margin-bottom: 0.5rem;
+}
+
+.team-members ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.team-members li {
+  color: var(--profile-text-secondary);
+  padding: 4px 0;
+}
+
+/* --- Botones de Acción de Equipo --- */
+.team-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: auto; /* Pega los botones al fondo */
+}
+
+.team-button {
+  flex-grow: 1;
+  border: none;
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.team-button-join {
+  background-color: var(--color-success);
+  color: white;
+}
+.team-button-join:hover {
+  background-color: #218838;
+  transform: scale(1.02);
+}
+
+.team-button-leave {
+  background-color: var(--color-warning);
+  color: #333;
+}
+.team-button-leave:hover {
+  background-color: #e0a800;
+  transform: scale(1.02);
+}
+
+.team-button-delete {
+  background-color: transparent;
+  border: 2px solid var(--color-danger);
+  color: var(--color-danger);
+}
+.team-button-delete:hover {
+  background-color: var(--color-danger);
+  color: white;
+  transform: scale(1.02);
+}
+
+.equipos-loading,
+.equipos-error {
+  font-size: 1.5rem;
+  color: var(--profile-text-secondary);
+  margin-top: 3rem;
+}

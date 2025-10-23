@@ -10,10 +10,17 @@ const validarEmail = (email) => {
   return null;
 };
 
-const validarPassword = (password) => {
-  if (!password.trim()) return "La contraseña es obligatoria";
+const validarPassword = (password, required = true) => {
+  // Si es obligatoria y está vacía, retorna error
+  if (required && !password.trim()) return "La contraseña es obligatoria";
+
+  // Si NO es obligatoria y está vacía, es válido (retorna null)
+  if (!required && !password.trim()) return null;
+
+  // Si se proveyó una contraseña (obligatoria o no), debe cumplir el formato
   if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password))
     return "Mínimo 8 caracteres, incluyendo letras y números";
+
   return null;
 };
 
@@ -66,7 +73,7 @@ export const Validations = async (datos, tipoValidacion) => {
       if (emailRepetido) errores.repetido = "Ya existe una cuenta registrada con ese correo";
     }
 
-    const errorPassword = validarPassword(datos.password);
+    const errorPassword = validarPassword(datos.password, true);
     if (errorPassword) errores.password = errorPassword;
 
     const errorConfirmPassword = validarConfirmPassword(datos.password, datos.confirmPassword);
@@ -77,7 +84,7 @@ export const Validations = async (datos, tipoValidacion) => {
     const errorEmail = validarEmail(datos.email);
     if (errorEmail) errores.email = errorEmail;
 
-    const errorPassword = validarPassword(datos.password);
+    const errorPassword = validarPassword(datos.password, true);
     if (errorPassword) errores.password = errorPassword;
   }
 
@@ -88,7 +95,7 @@ export const Validations = async (datos, tipoValidacion) => {
     const errorEmail = validarEmail(datos.email);
     if (errorEmail) errores.email = errorEmail;
 
-    const errorPassword = validarPassword(datos.password);
+    const errorPassword = validarPassword(datos.password, false);
     if (errorPassword) errores.password = errorPassword;
   }
 

@@ -3,7 +3,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Form } from "react-bootstrap";
+// Quitamos Form porque ya no usamos el Form.Check
 import * as Icon from "react-bootstrap-icons";
 import { toast, Slide } from "react-toastify";
 
@@ -17,14 +17,14 @@ const UsersForm = ({ userTemporal, getUsersList, onSaveSuccess, onCancel }) => {
     name: "",
     email: "",
     password: "",
-    role: false,
+    role: "USER", // El estado ahora guarda el string del rol
   });
   const [errores, setErrores] = useState({});
 
   const nameRef = useRef(null);
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
-  const checkRef = useRef(null);
+  const roleRef = useRef(null); // Ref para el <select>
   const navigate = useNavigate();
 
   const tipoLlamada = userTemporal.creando ? "Creando" : "Editando";
@@ -39,27 +39,26 @@ const UsersForm = ({ userTemporal, getUsersList, onSaveSuccess, onCancel }) => {
     setFormData({
       name: userTemporal.name,
       email: userTemporal.email,
-      password: "",
-      role: userTemporal.role === "ADMIN",
+      password: "", // Siempre vacía al cargar
+      role: userTemporal.role || "USER", // Carga el rol existente
     });
   }, [userTemporal]);
 
+  // Manejador único para todos los inputs (text, email, password, select)
   const changeHandler = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
-  const checkHandler = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.checked,
-    });
-  };
+
+  // Archivo: frontend/components/dashboard/UsersForm.jsx
 
   const submitHandler = async (e) => {
     e.preventDefault();
 
+    // Asumimos que Validations.js ya está ajustado para
+    // permitir contraseña vacía en modo "edit"
     const errores = await Validations(formData, "edit");
 
     if (Object.keys(errores).length > 0) {
@@ -70,18 +69,29 @@ const UsersForm = ({ userTemporal, getUsersList, onSaveSuccess, onCancel }) => {
         emailRef.current.focus();
         toast.error(errores.email, toastErrorConfig);
       } else if (errores.password && passwordRef.current) {
+        // Esto solo saltará si escriben una contraseña inválida
         passwordRef.current.focus();
         toast.error(errores.password, toastErrorConfig);
       }
-
       setErrores(errores);
     } else {
       setErrores({});
 
+      // --- ¡ESTA ES LA CORRECCIÓN CRÍTICA! ---
+      // 1. Creamos el objeto base con los datos que siempre van
       const datosEnviar = {
-        ...formData,
-        role: formData.role ? "ADMIN" : "USER",
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
       };
+
+      // 2. Solo añadimos la contraseña al objeto si el admin escribió una nueva
+      if (formData.password.trim() !== "") {
+        datosEnviar.password = formData.password;
+      }
+      // Si el campo está vacío, 'datosEnviar' no tendrá la key 'password',
+      // y el backend no la actualizará.
+      // --- FIN DE LA CORRECCIÓN ---
 
       if (tipoLlamada === "Creando") {
         endpoint = "http://localhost:3000/register";
@@ -100,14 +110,14 @@ const UsersForm = ({ userTemporal, getUsersList, onSaveSuccess, onCancel }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(datosEnviar),
+        body: JSON.stringify(datosEnviar), // Enviamos el objeto corregido
       });
 
       checkToken(response, navigate);
       getUsersList();
 
       onSaveSuccess();
-      toast.success(`Cuenta "${datosEnviar.name}" ${mensaje}`, toastSuccessConfig);
+      toast.success(`Cuenta "${datosEnviar.name}" ${mensaje}`, toastErrorConfig);
     }
   };
 
@@ -142,24 +152,24 @@ const UsersForm = ({ userTemporal, getUsersList, onSaveSuccess, onCancel }) => {
         <input
           type="password"
           name="password"
+          // Añadimos placeholder para guiar al admin
+          placeholder={tipoLlamada === "Editando" ? "(Dejar en blanco para no cambiar)" : ""}
           value={formData.password}
           onChange={changeHandler}
           ref={passwordRef}
         />
       </div>
 
-      <div className="switch-container">
-        <Form.Check
-          type="switch"
-          id="custom-switch"
-          label="¿Es administrador?"
-          checked={formData.role}
-          onChange={checkHandler}
-          name="role"
-          value={formData.role}
-          ref={checkRef}
-        />
+      {/* --- Menú desplegable de Roles --- */}
+      <div>
+        <label>Rol: </label>
+        <select name="role" value={formData.role} onChange={changeHandler} ref={roleRef}>
+          <option value="USER">USER</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="EVENTMANAGER">EVENTMANAGER</option>
+        </select>
       </div>
+      {/* --- FIN del menú --- */}
 
       <button type="submit">
         <Icon.CheckCircleFill color="#0FC41A" size={40} />

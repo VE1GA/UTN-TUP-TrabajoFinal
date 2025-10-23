@@ -37,7 +37,7 @@ function App() {
           <Route
             path="/play"
             element={
-              <ProtectedRoute allowedRoles={["USER"]}>
+              <ProtectedRoute allowedRoles={["USER", "EVENTMANAGER"]}>
                 <Wordle />
               </ProtectedRoute>
             }

@@ -4,6 +4,7 @@ import * as auth from "../services/auth.services.js";
 import * as words from "../services/words.services.js";
 import * as users from "../services/user.services.js";
 import * as stats from "../services/stats.services.js";
+import * as team from "../services/team.services.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
 export const router = Router();
@@ -28,5 +29,14 @@ router.put("/words/:id", verifyToken, words.EditExistingWord);
 
 router.post("/save_game", verifyToken, stats.saveGameResult);
 router.get("/my_stats", verifyToken, stats.getMyStats);
+
+// Endpoints de equipo
+
+router.get("/teams", verifyToken, team.getAllTeams);
+router.post("/teams/join/:teamId", verifyToken, team.joinTeam);
+router.delete("/teams/leave/:teamId", verifyToken, team.leaveTeam);
+
+router.post("/teams", verifyToken, team.createTeam);
+router.delete("/teams/:teamId", verifyToken, team.deleteTeam);
 
 export default router;

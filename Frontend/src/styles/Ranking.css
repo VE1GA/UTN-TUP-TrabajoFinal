@@ -1,0 +1,144 @@
+/* frontend/src/styles/Ranking.css */
+
+/* --- Importación de Fuente (Opcional) --- */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap");
+
+/* --- Variables de Color (Las mismas de Profile) --- */
+:root {
+  --profile-bg: #121212;
+  --profile-card-bg: rgba(26, 26, 29, 0.75);
+  --profile-border: rgba(255, 255, 255, 0.1);
+  --profile-text: #e0e0e0;
+  --profile-text-secondary: #aaaaaa;
+  --profile-text-highlight: #ffffff;
+  --profile-glow-primary: #8a2be2;
+  --profile-glow-secondary: #00bcd4;
+}
+
+/* --- Contenedor Principal --- */
+.ranking-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 2rem;
+  font-family: "Poppins", -apple-system, sans-serif;
+  background-color: var(--profile-bg);
+  min-height: 100vh;
+  color: var(--profile-text);
+  animation: fadeIn 0.8s ease-out; /* (Animación definida en Profile.css) */
+}
+
+.ranking-container h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--profile-text-highlight);
+  text-align: center;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+}
+
+/* --- Toggle Switch (Interruptor) --- */
+.ranking-toggle {
+  display: flex;
+  background-color: var(--profile-card-bg);
+  border: 1px solid var(--profile-border);
+  border-radius: 50px;
+  padding: 8px;
+  margin-bottom: 2.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-button {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--profile-text-secondary);
+  background-color: transparent;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-button.active {
+  color: var(--profile-text-highlight);
+  background: linear-gradient(90deg, var(--profile-glow-primary), var(--profile-glow-secondary));
+  box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);
+}
+
+/* --- Tabla de Ranking --- */
+.ranking-table-container {
+  width: 100%;
+  max-width: 900px;
+  background-color: var(--profile-card-bg);
+  border: 1px solid var(--profile-border);
+  border-radius: 16px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse; /* Bordes limpios */
+}
+
+.ranking-table th,
+.ranking-table td {
+  padding: 15px 20px;
+  text-align: left;
+  border-bottom: 1px solid var(--profile-border);
+}
+
+/* Cabecera de la tabla */
+.ranking-table th {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--profile-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Filas de la tabla */
+.ranking-table td {
+  font-size: 1.1rem;
+  color: var(--profile-text);
+  font-weight: 400;
+}
+
+/* Estilo especial para el #1, #2, #3 */
+.ranking-table tr:nth-child(1) td:first-child {
+  color: #ffd700; /* Oro */
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+.ranking-table tr:nth-child(2) td:first-child {
+  color: #c0c0c0; /* Plata */
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+.ranking-table tr:nth-child(3) td:first-child {
+  color: #cd7f32; /* Bronce */
+  font-weight: 500;
+  font-size: 1.15rem;
+}
+
+/* Centrar columnas numéricas */
+.ranking-table th.center,
+.ranking-table td.center {
+  text-align: center;
+}
+
+.ranking-table td.winrate {
+  color: var(--profile-glow-secondary);
+  font-weight: 600;
+}
+
+/* --- Mensajes de Carga y Error --- */
+.ranking-loading,
+.ranking-error {
+  font-size: 1.5rem;
+  color: var(--profile-text-secondary);
+  margin-top: 3rem;
+}

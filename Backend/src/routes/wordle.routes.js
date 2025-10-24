@@ -5,6 +5,7 @@ import * as words from "../services/words.services.js";
 import * as users from "../services/user.services.js";
 import * as stats from "../services/stats.services.js";
 import * as team from "../services/team.services.js";
+import * as ranking from "../services/ranking.services.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
 export const router = Router();
@@ -38,5 +39,10 @@ router.delete("/teams/leave/:teamId", verifyToken, team.leaveTeam);
 
 router.post("/teams", verifyToken, team.createTeam);
 router.delete("/teams/:teamId", verifyToken, team.deleteTeam);
+
+// Endpoints de ranking
+
+router.get("/ranking/individual", verifyToken, ranking.getIndividualRanking);
+router.get("/ranking/team", verifyToken, ranking.getTeamRanking);
 
 export default router;

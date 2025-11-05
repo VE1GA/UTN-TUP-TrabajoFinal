@@ -1,4 +1,4 @@
-import { Team, User, TeamPlayer } from "../db.js";
+import { Team, User, TeamPlayer, Stat } from "../db.js";
 import { UserRoles } from "../enums/enums.js";
 
 // Servicio para crear un nuevo equipo
@@ -24,6 +24,7 @@ export const createTeam = async (req, res) => {
       name,
       eventmanagerId: managerId,
     });
+    await Stat.create({ teamId: newTeam.id }); // Crear estadísticas para el manager
     res.status(201).json(newTeam);
   } catch (error) {
     console.error("Error al crear equipo:", error);
@@ -67,11 +68,15 @@ export const joinTeam = async (req, res) => {
       return res.status(404).json({ message: "Equipo no encontrado." });
     }
 
-    const alreadyJoined = await TeamPlayer.findOne({
-      where: { userId, teamId },
+    const existingTeamMembership = await TeamPlayer.findOne({
+      where: { userId },
     });
-    if (alreadyJoined) {
-      return res.status(400).json({ message: "Ya eres miembro de este equipo." });
+
+    if (existingTeamMembership) {
+      return res.status(400).json({
+        message:
+          "Ya eres miembro de un equipo. Debes abandonar tu equipo actual para unirte a uno nuevo.",
+      });
     }
 
     await TeamPlayer.create({ userId, teamId });

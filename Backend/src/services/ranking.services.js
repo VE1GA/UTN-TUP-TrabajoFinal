@@ -12,6 +12,9 @@ export const getIndividualRanking = async (req, res) => {
       },
       // Filtramos usuarios que no han jugado
       where: {
+        userId: {
+          [Op.not]: null,
+        },
         gamesplayed: {
           [Op.gt]: 0, // Op.gt significa "greater than" (mayor que) 0
         },
@@ -34,53 +37,22 @@ export const getIndividualRanking = async (req, res) => {
 // Servicio para obtener el ranking de equipos
 export const getTeamRanking = async (req, res) => {
   try {
-    // A. Obtenemos todos los equipos
-    const teams = await Team.findAll({
-      include: [
-        {
-          model: User,
-          as: "players", // Incluimos los jugadores (alias de db.js)
-          attributes: ["id"], // Solo necesitamos sus IDs
-          include: [
-            {
-              model: Stat, // Incluimos las estadísticas de CADA jugador
-              attributes: ["gameswon", "gameslost"],
-            },
-          ],
-        },
+    const ranking = await Stat.findAll({
+      where: {
+        teamId: { [Op.not]: null }, // Solo traer estadísticas de EQUIPOS
+        gamesplayed: { [Op.gt]: 0 },
+      },
+      include: {
+        model: Team, // Incluimos el modelo del Equipo para saber el nombre
+        attributes: ["name"],
+      },
+      order: [
+        ["gameswon", "DESC"],
+        ["winrate", "DESC"],
       ],
+      limit: 25,
     });
-
-    // B. Calculamos el puntaje de cada equipo en JavaScript
-    const teamScores = teams.map((team) => {
-      let totalVictories = 0;
-      let totalDefeats = 0;
-
-      team.players.forEach((player) => {
-        // 'stat' es singular porque User.hasOne(Stat)
-        if (player.stat) {
-          totalVictories += player.stat.gameswon;
-          totalDefeats += player.stat.gameslost;
-        }
-      });
-
-      return {
-        id: team.id,
-        name: team.name,
-        totalVictories,
-        totalDefeats,
-        // Calculamos un winrate simple para el equipo
-        winrate:
-          totalVictories + totalDefeats > 0
-            ? (totalVictories / (totalVictories + totalDefeats)) * 100
-            : 0,
-      };
-    });
-
-    // C. Ordenamos los equipos por sus victorias
-    const sortedRanking = teamScores.sort((a, b) => b.totalVictories - a.totalVictories);
-
-    res.status(200).json(sortedRanking);
+    res.status(200).json(ranking);
   } catch (error) {
     console.error("Error al obtener ranking de equipos:", error);
     res.status(500).json({ message: "Error interno del servidor" });

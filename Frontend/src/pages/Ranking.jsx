@@ -171,13 +171,13 @@ const RenderTeamTable = ({ data }) => {
             </td>
           </tr>
         ) : (
-          data.map((team, index) => (
-            <tr key={team.id}>
+          data.map((stat, index) => (
+            <tr key={stat.id}>
               <td className="center">{index + 1}</td>
-              <td>{team.name}</td>
-              <td className="center">{team.totalVictories}</td>
-              <td className="center">{team.totalDefeats}</td>
-              <td className="center winrate">{team.winrate.toFixed(1)}%</td>
+              <td>{stat.team ? stat.team.name : "Equipo Desconocido"}</td>
+              <td className="center">{stat.gameswon}</td>
+              <td className="center">{stat.gameslost}</td>
+              <td className="center winrate">{stat.winrate.toFixed(1)}%</td>
             </tr>
           ))
         )}

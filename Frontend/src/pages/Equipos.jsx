@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getToken, checkToken } from "../services/Token.services";
-import { useToast } from "../hooks/useToast"; // Importamos el hook de notificaciones
+import { useToast } from "../hooks/useToast";
 
-// Importamos el archivo CSS
 import "../styles/Equipos.css";
 
 const Teams = () => {
@@ -12,16 +11,19 @@ const Teams = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // --- NUEVO ESTADO ---
+  // Guardará el ID del equipo al que pertenece el usuario (o null si no)
+  const [userTeamId, setUserTeamId] = useState(null);
+
   const navigate = useNavigate();
   const { showSuccessToast, showErrorToast } = useToast();
 
-  // Obtenemos el usuario actual de localStorage para saber su rol e ID
   const currentUser = useMemo(() => {
     const userString = localStorage.getItem("user");
     return userString ? JSON.parse(userString) : null;
   }, []);
 
-  // --- 1. FUNCIÓN PARA OBTENER LOS EQUIPOS ---
+  // --- FUNCIÓN DE OBTENER EQUIPOS (MODIFICADA) ---
   const fetchTeams = async () => {
     const token = getToken(navigate);
     if (!token) return;
@@ -34,6 +36,20 @@ const Teams = () => {
       checkToken(response, navigate);
       const data = await response.json();
       setTeams(data);
+
+      // --- LÓGICA AÑADIDA ---
+      // Después de cargar los equipos, buscamos si el usuario está en uno
+      let foundTeamId = null;
+      if (currentUser) {
+        for (const team of data) {
+          if (team.players.some((player) => player.id === currentUser.id)) {
+            foundTeamId = team.id;
+            break; // Encontramos el equipo, salimos del bucle
+          }
+        }
+      }
+      setUserTeamId(foundTeamId); // Guardamos el ID (o null)
+      // --- FIN DE LÓGICA AÑADIDA ---
     } catch (err) {
       console.error("Error fetching teams:", err);
       setError(err.message || "Error al cargar equipos");
@@ -43,22 +59,19 @@ const Teams = () => {
     }
   };
 
-  // Cargar los equipos al iniciar el componente
   useEffect(() => {
     fetchTeams();
-  }, [navigate]);
+  }, [navigate]); // No añadimos currentUser a propósito para evitar recargas
 
-  // --- 2. FUNCIÓN PARA CREAR UN EQUIPO (SOLO EVENT MANAGER) ---
+  // ... (handleCreateTeam sigue igual) ...
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     if (newTeamName.trim() === "") {
       showErrorToast("El nombre del equipo no puede estar vacío.");
       return;
     }
-
     const token = getToken(navigate);
     if (!token) return;
-
     try {
       const response = await fetch("http://localhost:3000/teams", {
         method: "POST",
@@ -69,11 +82,10 @@ const Teams = () => {
         body: JSON.stringify({ name: newTeamName }),
       });
       checkToken(response, navigate);
-
       if (response.status === 201) {
         showSuccessToast(`Equipo "${newTeamName}" creado con éxito.`);
-        setNewTeamName(""); // Limpiar el input
-        fetchTeams(); // Recargar la lista de equipos
+        setNewTeamName("");
+        await fetchTeams(); // Esperamos a que recargue
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || "Error al crear el equipo");
@@ -83,8 +95,6 @@ const Teams = () => {
       showErrorToast(err.message);
     }
   };
-
-  // --- 3. FUNCIONES DE ACCIÓN (UNIRSE, ABANDONAR, ELIMINAR) ---
 
   const handleJoinTeam = async (teamId) => {
     const token = getToken(navigate);
@@ -98,9 +108,10 @@ const Teams = () => {
       checkToken(response, navigate);
       const data = await response.json();
       showSuccessToast(data.message);
-      fetchTeams(); // Recargar lista
+      await fetchTeams(); // Esperamos a que recargue
     } catch (err) {
-      showErrorToast(err.message || "Error al unirse al equipo");
+      const errorData = (await err.response?.json()) || { message: err.message };
+      showErrorToast(errorData.message || "Error al unirse al equipo");
     }
   };
 
@@ -116,14 +127,13 @@ const Teams = () => {
       checkToken(response, navigate);
       const data = await response.json();
       showSuccessToast(data.message);
-      fetchTeams(); // Recargar lista
+      await fetchTeams(); // Esperamos a que recargue
     } catch (err) {
       showErrorToast(err.message || "Error al abandonar el equipo");
     }
   };
 
   const handleDeleteTeam = async (teamId, teamName) => {
-    // Doble confirmación para una acción destructiva
     if (
       !window.confirm(
         `¿Estás seguro de que quieres eliminar el equipo "${teamName}"? Esta acción no se puede deshacer.`
@@ -131,10 +141,8 @@ const Teams = () => {
     ) {
       return;
     }
-
     const token = getToken(navigate);
     if (!token) return;
-
     try {
       const response = await fetch(`http://localhost:3000/teams/${teamId}`, {
         method: "DELETE",
@@ -143,7 +151,7 @@ const Teams = () => {
       checkToken(response, navigate);
       const data = await response.json();
       showSuccessToast(data.message);
-      fetchTeams(); // Recargar lista
+      await fetchTeams(); // Esperamos a que recargue
     } catch (err) {
       showErrorToast(err.message || "Error al eliminar el equipo");
     }
@@ -158,7 +166,6 @@ const Teams = () => {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="equipos-container">
@@ -166,15 +173,20 @@ const Teams = () => {
       </div>
     );
   }
+  if (!currentUser) {
+    return (
+      <div className="equipos-container">
+        <h1 className="equipos-error">Error: No se pudo cargar el usuario.</h1>
+      </div>
+    );
+  }
 
-  // Verificamos si el usuario es manager o admin
   const isManager = currentUser.role === "EVENTMANAGER" || currentUser.role === "ADMIN";
 
   return (
     <div className="equipos-container">
       <h1>Equipos</h1>
 
-      {/* --- FORMULARIO DE CREACIÓN (SOLO PARA MANAGERS) --- */}
       {isManager && (
         <form className="create-team-form" onSubmit={handleCreateTeam}>
           <h3>Crear un Nuevo Equipo</h3>
@@ -191,14 +203,15 @@ const Teams = () => {
         </form>
       )}
 
-      <h2>Equipos Disponibles ({teams.length})</h2>
+      <h2>Equipos Existentes ({teams.length})</h2>
 
-      {/* --- LISTA DE EQUIPOS --- */}
       <div className="equipos-grid">
         {teams.map((team) => {
-          // Verificamos si el usuario actual es miembro
-          const esMiembro = team.players.some((player) => player.id === currentUser.id);
-          // Verificamos si el usuario actual es el manager de ESTE equipo
+          // --- LÓGICA DE BOTONES MODIFICADA ---
+
+          // 1. ¿Es el usuario miembro de ESTE equipo?
+          const esMiembro = team.id === userTeamId;
+          // 2. ¿Es el usuario el manager de ESTE equipo?
           const esElManager = team.manager.id === currentUser.id;
 
           return (
@@ -221,9 +234,10 @@ const Teams = () => {
                 )}
               </div>
 
-              {/* --- BOTONES DE ACCIÓN --- */}
               <div className="team-actions">
-                {!esMiembro && (
+                {/* 1. Botón UNIRSE:
+                       Solo se muestra si el usuario NO tiene equipo (userTeamId es null) */}
+                {!userTeamId && (
                   <button
                     className="team-button team-button-join"
                     onClick={() => handleJoinTeam(team.id)}
@@ -232,17 +246,20 @@ const Teams = () => {
                   </button>
                 )}
 
-                {esMiembro &&
-                  !esElManager && ( // Un manager no puede "abandonar" su propio equipo
-                    <button
-                      className="team-button team-button-leave"
-                      onClick={() => handleLeaveTeam(team.id)}
-                    >
-                      Abandonar
-                    </button>
-                  )}
+                {/* 2. Botón ABANDONAR:
+                       Solo se muestra si el usuario es miembro de ESTE equipo.
+                       (Ya no chequea !esElManager) */}
+                {esMiembro && (
+                  <button
+                    className="team-button team-button-leave"
+                    onClick={() => handleLeaveTeam(team.id)}
+                  >
+                    Abandonar
+                  </button>
+                )}
 
-                {/* Solo el manager de este equipo o un Admin pueden eliminar */}
+                {/* 3. Botón ELIMINAR:
+                       Se muestra si eres el manager O un admin. */}
                 {(esElManager || currentUser.role === "ADMIN") && (
                   <button
                     className="team-button team-button-delete"

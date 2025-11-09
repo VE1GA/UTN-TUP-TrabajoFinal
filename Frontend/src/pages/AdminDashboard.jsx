@@ -8,6 +8,8 @@ import { Slide } from "react-toastify";
 import UsersManage from "../components/Dashboard/UsersManage";
 import WordsManage from "../components/Dashboard/WordsManage";
 
+import LogoutButton from "../components/LogoutButton";
+
 export const toastSuccessConfig = {
   position: "bottom-center",
   autoClose: 3000,
@@ -47,7 +49,11 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard">
       <div className="container">
-        <h1 className="title">Dashboard de administrador</h1>
+        <nav>
+          <h1 className="title">Dashboard de administrador</h1>
+          <LogoutButton />
+        </nav>
+
         <div className="dosbotones">
           <button
             className="botones"

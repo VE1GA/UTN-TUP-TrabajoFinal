@@ -7,5 +7,17 @@ import Equipos from "./Equipos";
 import Ranking from "./Ranking";
 import AdminDashboard from "./AdminDashboard";
 import NotFound from "./NotFound";
+import Torneos from "./Torneos";
 
-export { Home, Login, Register, Wordle, Perfil, Equipos, Ranking, AdminDashboard, NotFound };
+export {
+  Home,
+  Login,
+  Register,
+  Wordle,
+  Perfil,
+  Equipos,
+  Ranking,
+  AdminDashboard,
+  NotFound,
+  Torneos,
+};

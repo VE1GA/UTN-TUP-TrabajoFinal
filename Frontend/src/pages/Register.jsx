@@ -64,7 +64,7 @@ const Register = () => {
         });
 
       setTimeout(() => {
-        navigate("/iniciar_sesion");
+        navigate("/play");
       }, 2500);
     }
   };

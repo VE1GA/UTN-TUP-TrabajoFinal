@@ -8,6 +8,7 @@ import wordleRoutes from "./routes/wordle.routes.js";
 
 import { crearAdminInicial } from "./services/auth.services.js";
 import { importarPalabrasIniciales } from "./services/words.services.js";
+import { initializeCronJobs } from "./services/tournament.services.js";
 
 const app = express();
 
@@ -18,18 +19,22 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
+
 app.use(express.json());
+app.use(wordleRoutes);
 
 try {
-  app.listen(PORT);
-  app.use(wordleRoutes);
-
   await sequelize.sync();
 
   await crearAdminInicial();
   await importarPalabrasIniciales();
 
-  console.log("server listening on port ", PORT);
+  // ✅ ACÁ ESTABA EL ERROR REAL
+  await initializeCronJobs();
+
+  app.listen(PORT, () => {
+    console.log("server listening on port", PORT);
+  });
 } catch (error) {
-  console.log("there was an error on initialization");
+  console.log("there was an error on initialization", error);
 }

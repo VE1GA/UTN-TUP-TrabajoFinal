@@ -58,3 +58,29 @@ export const getTeamRanking = async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };
+
+export const getTeamWeeklyRanking = async (req, res) => {
+  try {
+    const stats = await Stat.findAll({
+      where: { teamId: { [Op.not]: null } },
+      include: { model: Team, attributes: ["name"] },
+      order: [
+        ["gameswon", "DESC"],
+        ["winrate", "DESC"],
+      ],
+    });
+
+    const ranking = stats.map((stat, index) => ({
+      id: stat.id,
+      team: { name: stat.team.name },
+      gameswon: stat.gameswon,
+      gameslost: stat.gameslost,
+      winrate: stat.winrate,
+    }));
+
+    res.status(200).json(ranking);
+  } catch (error) {
+    console.log("Error ranking semanal:", error);
+    res.status(500).json({ message: "Error interno" });
+  }
+};

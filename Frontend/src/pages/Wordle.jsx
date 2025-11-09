@@ -13,6 +13,7 @@ import { boardDefault, generateGameWords } from "../components/Game/Words";
 import { useNavigate } from "react-router-dom";
 
 import { getToken, checkToken } from "../services/Token.services";
+import LogoutButton from "../components/LogoutButton";
 
 export const WordleContext = createContext();
 
@@ -158,12 +159,14 @@ const Wordle = () => {
       >
         <nav>
           <h1>Wordle</h1>
+          <LogoutButton />
         </nav>
 
         <div className="botones">
           <button onClick={() => navigate("/ranking")}>Ranking</button>
           <button onClick={() => navigate("/perfil")}>Perfil</button>
           <button onClick={() => navigate("/equipos")}>Equipos</button>
+          <button onClick={() => navigate("/torneos")}>Torneos</button>
         </div>
 
         <div className="game">

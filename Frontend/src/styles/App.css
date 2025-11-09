@@ -15,12 +15,14 @@
 }
 
 nav {
+  display: flex;
   height: 60px;
   width: 100%;
   border-bottom: 1px solid grey;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
   flex-shrink: 0;
   padding: 0 10px;
   box-sizing: border-box;

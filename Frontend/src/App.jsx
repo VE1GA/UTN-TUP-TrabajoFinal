@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 
 // prettier-ignore
-import {Home, Login, Register, Wordle, Perfil, Equipos, Ranking, AdminDashboard, NotFound} from "./pages";
+import {Home, Login, Register, Wordle, Perfil, Equipos, Ranking, AdminDashboard, NotFound, Torneos} from "./pages";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -21,6 +21,7 @@ function App() {
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/equipos" element={<Equipos />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/torneos" element={<Torneos />} />
 
           <Route path="/registrarse" element={<Register />} />
           <Route path="/iniciar_sesion" element={<Login />} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react"; // <-- useMemo y useCallback añadidos
 import { useNavigate } from "react-router-dom";
 import { getToken, checkToken } from "../services/Token.services";
 import { useToast } from "../hooks/useToast";
@@ -33,48 +33,60 @@ const Torneos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const navigate = useNavigate();
-  const { showErrorToast } = useToast();
+  const { showSuccessToast, showErrorToast } = useToast(); // <-- showSuccessToast añadido
 
   const tournamentEndDate = getTournamentEndDate();
 
-  useEffect(() => {
+  // --- LÓGICA AÑADIDA: OBTENER USUARIO ACTUAL Y ROL ---
+  const currentUser = useMemo(() => {
+    const userString = localStorage.getItem("user");
+    return userString ? JSON.parse(userString) : null;
+  }, []);
+
+  const isManager = currentUser?.role === "EVENTMANAGER" || currentUser?.role === "ADMIN";
+  // --- FIN LÓGICA AÑADIDA ---
+
+  // --- LÓGICA MODIFICADA: fetchAllData extraído para re-uso ---
+  const fetchAllData = useCallback(async () => {
     const token = getToken(navigate);
     if (!token) return;
 
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        const [rankingRes, hofRes, historyRes] = await Promise.all([
-          fetch("http://localhost:3000/ranking/team_weekly", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch("http://localhost:3000/tournaments/hall_of_fame", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch("http://localhost:3000/tournaments", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+    setLoading(true);
+    try {
+      const [rankingRes, hofRes, historyRes] = await Promise.all([
+        fetch("http://localhost:3000/ranking/team_weekly", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("http://localhost:3000/tournaments/hall_of_fame", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("http://localhost:3000/tournaments", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-        checkToken(rankingRes, navigate);
-        checkToken(hofRes, navigate);
-        checkToken(historyRes, navigate);
+      checkToken(rankingRes, navigate);
+      checkToken(hofRes, navigate);
+      checkToken(historyRes, navigate);
 
-        const rankingData = await rankingRes.json();
-        const hofData = await hofRes.json();
-        const historyData = await historyRes.json();
+      const rankingData = await rankingRes.json();
+      const hofData = await hofRes.json();
+      const historyData = await historyRes.json();
 
-        setCurrentRanking(rankingData);
-        setHallOfFame(hofData);
-        setHistory(historyData);
-      } catch (err) {
-        showErrorToast(err.message || "Error al cargar datos del torneo");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAllData();
+      setCurrentRanking(rankingData);
+      setHallOfFame(hofData);
+      setHistory(historyData);
+    } catch (err) {
+      showErrorToast(err.message || "Error al cargar datos del torneo");
+    } finally {
+      setLoading(false);
+    }
   }, [navigate, showErrorToast]);
+  // --- FIN LÓGICA MODIFICADA ---
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
 
   const handleHistoryClick = async (id) => {
     const token = getToken(navigate);
@@ -91,6 +103,35 @@ const Torneos = () => {
       showErrorToast(err.message || "Error al cargar el torneo");
     }
   };
+
+  // --- FUNCIÓN AÑADIDA: Manejador para borrar historial ---
+  const handleDeleteTournament = async (e, id, name) => {
+    e.stopPropagation(); // Evita que se abra el modal al hacer clic en el botón
+    if (
+      !window.confirm(
+        `¿Seguro que quieres eliminar el torneo "${name}"? Esta acción es permanente y afectará al Salón de la Fama.`
+      )
+    ) {
+      return;
+    }
+
+    const token = getToken(navigate);
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:3000/tournaments/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      checkToken(response, navigate);
+      const data = await response.json();
+      showSuccessToast(data.message);
+      await fetchAllData(); // Recarga todos los datos
+    } catch (err) {
+      showErrorToast(err.message || "Error al eliminar el torneo");
+    }
+  };
+  // --- FIN FUNCIÓN AÑADIDA ---
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -134,15 +175,25 @@ const Torneos = () => {
               {history.length === 0 ? (
                 <p style={{ color: "#aaa" }}>Aún no se ha completado ningún torneo.</p>
               ) : (
+                // --- JSX MODIFICADO: Añadido botón de borrar ---
                 history.map((torneo) => (
                   <div
                     key={torneo.id}
                     className="torneo-item"
                     onClick={() => handleHistoryClick(torneo.id)}
                   >
-                    {torneo.name}
+                    <span>{torneo.name}</span>
+                    {isManager && (
+                      <button
+                        className="torneo-delete-btn"
+                        onClick={(e) => handleDeleteTournament(e, torneo.id, torneo.name)}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </div>
                 ))
+                // --- FIN JSX MODIFICADO ---
               )}
             </div>
           </div>

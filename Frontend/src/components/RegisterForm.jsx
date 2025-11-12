@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import RegistroLogo from "../assets/registro.webp";
 
 const RegisterForm = ({ onSubmit, errores, refs }) => {
   const [formData, setFormData] = useState({
@@ -28,7 +29,7 @@ const RegisterForm = ({ onSubmit, errores, refs }) => {
     <div className="register-form body">
       <div className="container">
         <h1>Wordle</h1>
-        <img src="registro.png" alt="" />
+        <img src={RegistroLogo} alt="" />
 
         <h4>Registro</h4>
         <form onSubmit={handleSubmit} noValidate>
@@ -53,9 +54,7 @@ const RegisterForm = ({ onSubmit, errores, refs }) => {
               ref={refs.emailRef}
             />
             {errores.email && <p style={{ color: "red" }}>{errores.email}</p>}
-            {errores.repetido && (
-              <p style={{ color: "red" }}>{errores.repetido}</p>
-            )}
+            {errores.repetido && <p style={{ color: "red" }}>{errores.repetido}</p>}
           </div>
           <div>
             <label>Contraseña: </label>
@@ -66,9 +65,7 @@ const RegisterForm = ({ onSubmit, errores, refs }) => {
               onChange={handleChange}
               ref={refs.passwordRef}
             />
-            {errores.password && (
-              <p style={{ color: "red" }}>{errores.password}</p>
-            )}
+            {errores.password && <p style={{ color: "red" }}>{errores.password}</p>}
           </div>
           <div>
             <label>Confirmar Contraseña: </label>
@@ -79,9 +76,7 @@ const RegisterForm = ({ onSubmit, errores, refs }) => {
               onChange={handleChange}
               ref={refs.confirmPasswordRef}
             />
-            {errores.confirmPassword && (
-              <p style={{ color: "red" }}>{errores.confirmPassword}</p>
-            )}
+            {errores.confirmPassword && <p style={{ color: "red" }}>{errores.confirmPassword}</p>}
           </div>
           <button type="submit">Registrarse</button>
         </form>

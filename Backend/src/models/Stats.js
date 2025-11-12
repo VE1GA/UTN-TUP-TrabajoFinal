@@ -11,6 +11,7 @@ const StatModel = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
+      // --- CAMPOS HISTÓRICOS (YA EXISTEN) ---
       gamesplayed: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -31,6 +32,28 @@ const StatModel = (sequelize) => {
         allowNull: false,
         defaultValue: 0,
       },
+      // --- CAMPOS SEMANALES (NUEVOS) ---
+      weekly_gamesplayed: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      weekly_gameswon: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      weekly_gameslost: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      weekly_winrate: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      // --- FIN DE CAMPOS NUEVOS ---
       // Cambiamos a JSON para guardar un historial (ej: [5, 4, 5])
       attempts: {
         type: DataTypes.JSON,

@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { Tournament, Stat, Team } from "../db.js";
 import { Op } from "sequelize";
+import { UserRoles } from "../enums/enums.js";
 
 /**
  * Utilidad: normaliza el campo teamsInfo a array
@@ -20,6 +21,20 @@ const toResultsArray = (value) => {
 };
 
 /**
+ * Utilidad: Chequea roles de Admin/Manager
+ */
+const checkManagerAdmin = (req, res) => {
+  const userRole = req.user.role;
+  if (userRole !== UserRoles.EVENTMANAGER && userRole !== UserRoles.ADMIN) {
+    res.status(403).json({
+      message: "Acceso denegado. Se requiere rol de Event Manager o Administrador.",
+    });
+    return false;
+  }
+  return true;
+};
+
+/**
  * Asegura que exista un torneo "actual" (vacío) cuando el server arranca.
  * Si ya existe un registro con teamsInfo vacío al final, lo reutiliza; si el último
  * ya tiene snapshot (es decir, terminó), crea uno nuevo para la semana que empieza.
@@ -29,7 +44,7 @@ const ensureCurrentTournamentExists = async () => {
   const last = await Tournament.findOne({ order: [["id", "DESC"]] });
 
   if (!last) {
-    const name = `Torneo Semanal - Inicia ${new Date().toLocaleDateString("es-AR")}`;
+    const name = `Torneo Semanal - Inicia ${new Date().toLocaleString("es-AR")}`;
     await Tournament.create({
       name,
       teamsInfo: [], // array vacío
@@ -46,7 +61,7 @@ const ensureCurrentTournamentExists = async () => {
   }
 
   // si el último ya tiene snapshot, creamos el de la nueva semana
-  const name = `Torneo Semanal - Inicia ${new Date().toLocaleDateString("es-AR")}`;
+  const name = `Torneo Semanal - Inicia ${new Date().toLocaleString("es-AR")}`;
   await Tournament.create({
     name,
     teamsInfo: [],
@@ -140,12 +155,12 @@ const cycleWeeklyTournament = async () => {
     const teamStats = await Stat.findAll({
       where: {
         teamId: { [Op.not]: null },
-        gamesplayed: { [Op.gt]: 0 },
+        weekly_gamesplayed: { [Op.gt]: 0 }, // <-- Lee campos Semanales
       },
       include: { model: Team, attributes: ["name"] },
       order: [
-        ["gameswon", "DESC"],
-        ["winrate", "DESC"], // desempate por % de victorias
+        ["weekly_gameswon", "DESC"], // <-- Lee campos Semanales
+        ["weekly_winrate", "DESC"], // <-- Lee campos Semanales
       ],
     });
 
@@ -153,9 +168,9 @@ const cycleWeeklyTournament = async () => {
       rank: index + 1,
       teamId: stat.teamId,
       name: stat.team ? stat.team.name : "Equipo Desconocido",
-      gameswon: stat.gameswon,
-      gameslost: stat.gameslost,
-      winrate: stat.winrate,
+      gameswon: stat.weekly_gameswon, // <-- Guarda campos Semanales
+      gameslost: stat.weekly_gameslost, // <-- Guarda campos Semanales
+      winrate: stat.weekly_winrate, // <-- Guarda campos Semanales
     }));
 
     // 2) Buscar el torneo "abierto" (último registro)
@@ -167,7 +182,7 @@ const cycleWeeklyTournament = async () => {
     if (!currentTournament) {
       console.log("[Cron Job] Primera ejecución. Creando torneo inaugural para guardar snapshot.");
       currentTournament = await Tournament.create({
-        name: `Torneo Inaugural (Termina ${new Date().toLocaleDateString("es-AR")})`,
+        name: `Torneo Inaugural (Termina ${new Date().toLocaleString("es-AR")})`,
         teamsInfo: [],
       });
     }
@@ -177,16 +192,16 @@ const cycleWeeklyTournament = async () => {
     await currentTournament.save();
     console.log(`[Cron Job] Torneo ${currentTournament.name} finalizado y guardado.`);
 
-    // 5) Resetear TODAS las estadísticas semanales de equipos
+    // 5) Resetear SOLAMENTE las estadísticas semanales de equipos
     await Stat.update(
-      { gamesplayed: 0, gameswon: 0, gameslost: 0, winrate: 0 },
+      { weekly_gamesplayed: 0, weekly_gameswon: 0, weekly_gameslost: 0, weekly_winrate: 0 },
       { where: { teamId: { [Op.not]: null } } }
     );
-    console.log("[Cron Job] Estadísticas de equipos reseteadas para la nueva semana.");
+    console.log("[Cron Job] Estadísticas SEMANALES de equipos reseteadas.");
 
     // 6) Crear el NUEVO torneo para la semana que empieza
     const newDate = new Date();
-    const tournamentName = `Torneo Semanal - Inicia ${newDate.toLocaleDateString("es-AR")}`;
+    const tournamentName = `Torneo Semanal - Inicia ${newDate.toLocaleString("es-AR")}`;
     await Tournament.create({
       name: tournamentName,
       teamsInfo: [],
@@ -201,7 +216,6 @@ const cycleWeeklyTournament = async () => {
 export const initializeCronJobs = async () => {
   await ensureCurrentTournamentExists();
 
-  // Para probar usa "* * * * *"
   // Producción: "59 23 * * 0" => Domingo 23:59 (zona AR)
   cron.schedule("* * * * *", cycleWeeklyTournament, {
     scheduled: true,
@@ -209,4 +223,36 @@ export const initializeCronJobs = async () => {
   });
 
   console.log("[INFO] Tarea programada de torneos (Domingos 23:59) inicializada.");
+};
+
+// --- 6. ELIMINAR UN TORNEO (CORREGIDO) ---
+export const deleteTournament = async (req, res) => {
+  // 1. Verificar permisos
+  if (!checkManagerAdmin(req, res)) return;
+
+  const { id } = req.params;
+  try {
+    // 2. Buscar el torneo a eliminar
+    const tournament = await Tournament.findByPk(id);
+    if (!tournament) {
+      return res.status(404).json({ message: "Torneo no encontrado." });
+    }
+
+    // 3. Buscar el torneo "actual" (el que tiene el ID más alto)
+    const currentTournament = await Tournament.findOne({
+      order: [["id", "DESC"]],
+    });
+
+    // 4. Comprobar si el ID a borrar es el del torneo actual
+    if (currentTournament && tournament.id === currentTournament.id) {
+      return res.status(400).json({ message: "No se puede eliminar el torneo semanal actual." });
+    }
+
+    // 5. Borrar
+    await tournament.destroy();
+    res.status(200).json({ message: "Historial de torneo eliminado correctamente." });
+  } catch (error) {
+    console.error("Error al eliminar el torneo:", error);
+    res.status(500).json({ message: "Error interno del servidor." });
+  }
 };

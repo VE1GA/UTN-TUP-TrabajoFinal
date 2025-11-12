@@ -182,6 +182,7 @@ const ManageWords = () => {
               getWordsList={getWordsList}
               onSaveSuccess={closeModal}
               onCancel={closeModal}
+              wordList={wordList}
             />
           </Modal>
 

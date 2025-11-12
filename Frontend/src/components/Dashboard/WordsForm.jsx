@@ -9,7 +9,7 @@ import { toast, Slide } from "react-toastify";
 import { Validations } from "../../utils/Validations";
 import { toastSuccessConfig, toastErrorConfig } from "../../pages/AdminDashboard";
 
-const WordsForm = ({ wordTemporal, getWordsList, onSaveSuccess, onCancel }) => {
+const WordsForm = ({ wordTemporal, getWordsList, onSaveSuccess, onCancel, wordList }) => {
   // Declaraciones
   const [formData, setFormData] = useState({
     value: "",
@@ -27,7 +27,7 @@ const WordsForm = ({ wordTemporal, getWordsList, onSaveSuccess, onCancel }) => {
   let metodo;
   let mensaje;
 
-  // Rellenado de los campos con los datos de la palabra (o vacío si se está creando)
+  // Rellenado de los campos
   useEffect(() => {
     setFormData({
       value: wordTemporal.value,
@@ -35,7 +35,7 @@ const WordsForm = ({ wordTemporal, getWordsList, onSaveSuccess, onCancel }) => {
     });
   }, [wordTemporal]);
 
-  // Guardar los cambios que hace el usuario en el formulario
+  // Guardar los cambios
   const changeHandler = (e) => {
     setFormData({
       ...formData,
@@ -47,43 +47,65 @@ const WordsForm = ({ wordTemporal, getWordsList, onSaveSuccess, onCancel }) => {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    const errores = await Validations(formData, "words");
-    if (Object.keys(errores).length > 0) {
-      if (errores.value && valueRef.current) {
+    // --- LÓGICA CORREGIDA ---
+
+    // 1. Validamos el formato (vacío, 5 letras, 0-100)
+    const erroresValidacion = await Validations(formData, "words");
+
+    if (Object.keys(erroresValidacion).length > 0) {
+      // Si hay errores de formato (ej: campos vacíos)
+      if (erroresValidacion.value && valueRef.current) {
         valueRef.current.focus();
-        toast.error(errores.value, toastErrorConfig);
-      } else if (errores.luck && luckRef.current) {
+        toast.error(erroresValidacion.value, toastErrorConfig);
+      } else if (erroresValidacion.luck && luckRef.current) {
         luckRef.current.focus();
-        toast.error(errores.luck, toastErrorConfig);
+        toast.error(erroresValidacion.luck, toastErrorConfig);
       }
+      setErrores(erroresValidacion);
+      return; // Detenemos la ejecución aquí
+    }
 
-      setErrores(errores);
-    } else {
-      setErrores({});
+    // 2. Si el formato es OK, validamos la duplicidad (solo al crear)
+    if (wordTemporal.creando) {
+      const palabraRepetida = wordList.find(
+        (word) => word.value.toUpperCase() === formData.value.toUpperCase()
+      );
 
-      if (tipoLlamada === "Creando") {
-        endpoint = "http://localhost:3000/words";
-        metodo = "POST";
-        mensaje = "se añadió correctamente";
-      } else if (tipoLlamada === "Editando") {
-        endpoint = `http://localhost:3000/words/${wordTemporal.id}`;
-        metodo = "PUT";
-        mensaje = "se modificó correctamente";
+      if (palabraRepetida) {
+        toast.error("Esta palabra ya existe en el banco de palabras", toastErrorConfig);
+        valueRef.current.focus();
+        setErrores({ repetida: true }); // Marcamos el error
+        return; // Detenemos la ejecución aquí
       }
+    }
 
-      const payload = {
-        value: formData.value.toUpperCase(),
-        luck: formData.luck,
-      };
+    // 3. Si todo está OK, continuamos con el envío
+    setErrores({}); // Limpiamos errores
 
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        console.error("No token found. Redirecting to login.");
-        navigate("/iniciar_sesion");
-        return;
-      }
-      console.log(`[WordsForm - ${tipoLlamada}] Enviando token:`, token);
+    if (tipoLlamada === "Creando") {
+      endpoint = "http://localhost:3000/words";
+      metodo = "POST";
+      mensaje = "se añadió correctamente";
+    } else if (tipoLlamada === "Editando") {
+      endpoint = `http://localhost:3000/words/${wordTemporal.id}`;
+      metodo = "PUT";
+      mensaje = "se modificó correctamente";
+    }
 
+    const payload = {
+      value: formData.value.toUpperCase(),
+      luck: formData.luck,
+    };
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      console.error("No token found. Redirecting to login.");
+      navigate("/iniciar_sesion");
+      return;
+    }
+    console.log(`[WordsForm - ${tipoLlamada}] Enviando token:`, token);
+
+    try {
       const response = await fetch(endpoint, {
         method: metodo,
         headers: {
@@ -108,6 +130,9 @@ const WordsForm = ({ wordTemporal, getWordsList, onSaveSuccess, onCancel }) => {
       await getWordsList();
       onSaveSuccess();
       toast.success(`Palabra "${formData.value}" ${mensaje}`, toastSuccessConfig);
+    } catch (error) {
+      console.error("Error submitting word:", error);
+      toast.error(error.message || "Error al guardar la palabra.", toastErrorConfig);
     }
   };
 

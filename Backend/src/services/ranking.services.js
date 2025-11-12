@@ -1,32 +1,28 @@
 import { Stat, User, Team } from "../db.js";
-import { Op } from "sequelize"; // <-- Asegúrate de tener esta línea
+import { Op } from "sequelize";
 
-// Servicio para obtener el ranking individual
+// --- RANKING INDIVIDUAL (SIN CAMBIOS) ---
 export const getIndividualRanking = async (req, res) => {
   try {
     const ranking = await Stat.findAll({
-      // Incluimos los datos del usuario para mostrar su nombre
       include: {
         model: User,
-        attributes: ["name"], // Solo queremos el nombre
+        attributes: ["name"],
       },
-      // Filtramos usuarios que no han jugado
       where: {
         userId: {
           [Op.not]: null,
         },
         gamesplayed: {
-          [Op.gt]: 0, // Op.gt significa "greater than" (mayor que) 0
+          [Op.gt]: 0,
         },
       },
-      // Ordenamos: primero por más victorias, luego por winrate
       order: [
         ["gameswon", "DESC"],
         ["winrate", "DESC"],
       ],
-      limit: 25, // Traemos solo el Top 25
+      limit: 25,
     });
-
     res.status(200).json(ranking);
   } catch (error) {
     console.error("Error al obtener ranking individual:", error);
@@ -34,21 +30,23 @@ export const getIndividualRanking = async (req, res) => {
   }
 };
 
-// Servicio para obtener el ranking de equipos
+// --- RANKING DE EQUIPOS (HISTÓRICO) ---
+// Esta función ahora lee los campos históricos (gameswon, winrate)
+// que ya NO se resetean.
 export const getTeamRanking = async (req, res) => {
   try {
     const ranking = await Stat.findAll({
       where: {
-        teamId: { [Op.not]: null }, // Solo traer estadísticas de EQUIPOS
-        gamesplayed: { [Op.gt]: 0 },
+        teamId: { [Op.not]: null },
+        gamesplayed: { [Op.gt]: 0 }, // <-- Lee histórico
       },
       include: {
-        model: Team, // Incluimos el modelo del Equipo para saber el nombre
+        model: Team,
         attributes: ["name"],
       },
       order: [
-        ["gameswon", "DESC"],
-        ["winrate", "DESC"],
+        ["gameswon", "DESC"], // <-- Lee histórico
+        ["winrate", "DESC"], // <-- Lee histórico
       ],
       limit: 25,
     });
@@ -59,23 +57,29 @@ export const getTeamRanking = async (req, res) => {
   }
 };
 
+// --- RANKING SEMANAL (PARA LA PÁGINA DE TORNEOS) ---
+// Esta función AHORA lee los campos "weekly_"
 export const getTeamWeeklyRanking = async (req, res) => {
   try {
     const stats = await Stat.findAll({
-      where: { teamId: { [Op.not]: null } },
+      where: {
+        teamId: { [Op.not]: null },
+        weekly_gamesplayed: { [Op.gt]: 0 }, // <-- CAMBIADO
+      },
       include: { model: Team, attributes: ["name"] },
       order: [
-        ["gameswon", "DESC"],
-        ["winrate", "DESC"],
+        ["weekly_gameswon", "DESC"], // <-- CAMBIADO
+        ["weekly_winrate", "DESC"], // <-- CAMBIADO
       ],
     });
 
-    const ranking = stats.map((stat, index) => ({
+    // Mapeamos los campos weekly_ a la respuesta
+    const ranking = stats.map((stat) => ({
       id: stat.id,
       team: { name: stat.team.name },
-      gameswon: stat.gameswon,
-      gameslost: stat.gameslost,
-      winrate: stat.winrate,
+      gameswon: stat.weekly_gameswon, // <-- CAMBIADO
+      gameslost: stat.weekly_gameslost, // <-- CAMBIADO
+      winrate: stat.weekly_winrate, // <-- CAMBIADO
     }));
 
     res.status(200).json(ranking);

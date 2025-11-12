@@ -37,6 +37,11 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  /* --- ESTILOS AÑADIDOS/MODIFICADOS --- */
+  max-height: 400px; /* Alto máximo para el scroll */
+  overflow-y: auto; /* Scroll vertical */
+  padding-right: 10px; /* Espacio para la barra de scroll */
+  /* --- FIN DE CAMBIOS --- */
 }
 
 .torneo-item {
@@ -50,12 +55,33 @@
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .torneo-item:hover {
   transform: scale(1.02);
   border-color: var(--profile-glow-secondary);
   box-shadow: 0 0 15px rgba(0, 188, 212, 0.3);
+}
+
+.torneo-delete-btn {
+  background-color: transparent;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: 1rem;
+  transition: all 0.2s ease;
+}
+
+.torneo-delete-btn:hover {
+  background-color: var(--color-danger);
+  color: white;
+  transform: scale(1.05);
 }
 
 .modal-body .ranking-table {

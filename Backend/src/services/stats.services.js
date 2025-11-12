@@ -35,6 +35,7 @@ export const saveGameResult = async (req, res) => {
       return res.status(404).json({ message: "Estadísticas no encontradas" });
     }
 
+    // --- LÓGICA DE JUGADOR (SIN CAMBIOS) ---
     playerStats.gamesplayed += 1;
     const fechaHoy = new Date().toISOString().split("T")[0];
     const ultimaVictoria = playerStats.lastWinDate;
@@ -60,29 +61,36 @@ export const saveGameResult = async (req, res) => {
     playerStats.winrate = (playerStats.gameswon / playerStats.gamesplayed) * 100;
     await playerStats.save();
 
-    // LOGICA PARA GUARDAR EN EQUIPOS
-
+    // --- LÓGICA PARA GUARDAR EN EQUIPOS (MODIFICADA) ---
     const membership = await TeamPlayer.findOne({ where: { userId } });
 
     if (membership) {
       const teamId = membership.teamId;
-
-      // 2.b. Encontrar la fila de estadísticas del equipo
       const teamStats = await Stat.findOne({ where: { teamId } });
 
       if (teamStats) {
-        // 2.c. Actualizar las estadísticas del equipo
+        // 1. Actualizar estadísticas HISTÓRICAS (nunca se borran)
         teamStats.gamesplayed += 1;
 
+        // 2. Actualizar estadísticas SEMANALES (se borran con el cron)
+        teamStats.weekly_gamesplayed += 1;
+
         if (didWin) {
-          teamStats.gameswon += 1;
+          teamStats.gameswon += 1; // Histórico
+          teamStats.weekly_gameswon += 1; // Semanal
         } else {
-          teamStats.gameslost += 1;
+          teamStats.gameslost += 1; // Histórico
+          teamStats.weekly_gameslost += 1; // Semanal
         }
 
+        // 3. Calcular Winrates para ambos
         teamStats.winrate = (teamStats.gameswon / teamStats.gamesplayed) * 100;
+        teamStats.weekly_winrate = (teamStats.weekly_gameswon / teamStats.weekly_gamesplayed) * 100;
+
         await teamStats.save();
-        console.log(`[Stats] Estadísticas del equipo ${teamId} actualizadas.`);
+        console.log(
+          `[Stats] Estadísticas (Históricas y Semanales) del equipo ${teamId} actualizadas.`
+        );
       }
     }
 

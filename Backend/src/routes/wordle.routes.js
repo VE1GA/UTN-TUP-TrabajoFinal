@@ -48,5 +48,6 @@ router.get("/ranking/team_weekly", verifyToken, ranking.getTeamWeeklyRanking);
 router.get("/tournaments/hall_of_fame", verifyToken, tournament.getTournamentHallOfFame);
 router.get("/tournaments", verifyToken, tournament.getAllTournaments);
 router.get("/tournaments/:id", verifyToken, tournament.getTournamentById);
+router.delete("/tournaments/:id", verifyToken, tournament.deleteTournament); // <-- AÑADIDO
 
 export default router;
